@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "party-scout",
-    "slug": "party-scout",
+    "name": "Rave Radar",
+    "slug": "rave-radar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "partyscout",
+    "scheme": "raveradar",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0d0d1a"
+      "backgroundColor": "#080810"
     },
     "ios": {
       "supportsTablet": true

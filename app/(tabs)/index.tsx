@@ -16,7 +16,6 @@ const DEFAULT_FILTERS: EventFilters = {
   radius: 100,
 };
 
-// Demo events — shown before Supabase is connected
 const DEMO_EVENTS: Event[] = [
   {
     id: '1',
@@ -150,14 +149,10 @@ export default function HomeScreen() {
       setEvents(result);
     } catch {
       setUsingDemo(true);
-      let demo = DEMO_EVENTS;
-      if (loc) {
-        demo = demo.map(e => ({
-          ...e,
-          distance_km: e.lat && e.lng ? distanceKm(loc.lat, loc.lng, e.lat, e.lng) : undefined,
-        }));
-      }
-      setEvents(demo);
+      setEvents(DEMO_EVENTS.map(e => ({
+        ...e,
+        distance_km: loc && e.lat && e.lng ? distanceKm(loc.lat, loc.lng, e.lat, e.lng) : undefined,
+      })));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -177,11 +172,20 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Party Scout</Text>
-        <Text style={styles.sub}>
-          {events.length} {events.length === 1 ? 'party' : 'parties'} · {locationLabel}
-        </Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.logo}>⚡ RAVE RADAR</Text>
+            <Text style={styles.sub}>
+              {events.length} events · {locationLabel}
+            </Text>
+          </View>
+          <View style={styles.liveDot}>
+            <View style={styles.liveDotInner} />
+            <Text style={styles.liveText}>LIVE</Text>
+          </View>
+        </View>
       </View>
 
       <LocationSearch location={location} onLocationChange={setLocation} />
@@ -190,13 +194,13 @@ export default function HomeScreen() {
       {usingDemo && (
         <View style={styles.demoBanner}>
           <Text style={styles.demoBannerText}>
-            Demo data · Add Supabase keys to .env to go live
+            ⚡ Demo mode · Connect Supabase to see real events
           </Text>
         </View>
       )}
 
       {loading && !refreshing ? (
-        <ActivityIndicator color="#8B5CF6" style={{ marginTop: 40 }} />
+        <ActivityIndicator color="#A855F7" size="large" style={{ marginTop: 50 }} />
       ) : (
         <FlatList
           data={events}
@@ -204,12 +208,14 @@ export default function HomeScreen() {
           renderItem={({ item }) => <EventCard event={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#A855F7" />
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🔍</Text>
-              <Text style={styles.emptyText}>No parties found nearby.</Text>
-              <Text style={styles.emptyHint}>Try increasing the radius or changing filters.</Text>
+              <Text style={styles.emptyEmoji}>📡</Text>
+              <Text style={styles.emptyTitle}>No events on the radar.</Text>
+              <Text style={styles.emptyHint}>Expand your radius or clear the genre filter.</Text>
             </View>
           }
         />
@@ -219,23 +225,62 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0d0d1a' },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  logo: { color: '#fff', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  sub: { color: '#6B7280', fontSize: 13, marginTop: 2 },
-  list: { paddingTop: 8, paddingBottom: 20 },
-  demoBanner: {
-    backgroundColor: '#92400E33',
+  safe: { flex: 1, backgroundColor: '#080810' },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#A855F711',
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logo: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    textShadowColor: '#A855F7',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 16,
+  },
+  sub: { color: '#6B7280', fontSize: 12, marginTop: 3, fontWeight: '500' },
+  liveDot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#A855F711',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: 1,
-    borderColor: '#D97706',
+    borderColor: '#A855F733',
+  },
+  liveDotInner: {
+    width: 6, height: 6, borderRadius: 3,
+    backgroundColor: '#A855F7',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+  },
+  liveText: { color: '#A855F7', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  list: { paddingTop: 12, paddingBottom: 24 },
+  demoBanner: {
+    backgroundColor: '#A855F711',
+    borderWidth: 1,
+    borderColor: '#A855F733',
     marginHorizontal: 16,
     marginBottom: 8,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 8,
   },
-  demoBannerText: { color: '#FCD34D', fontSize: 12, textAlign: 'center' },
-  empty: { alignItems: 'center', marginTop: 60 },
-  emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  emptyHint: { color: '#6B7280', fontSize: 14, marginTop: 6 },
+  demoBannerText: { color: '#A855F7', fontSize: 11, textAlign: 'center', fontWeight: '600', letterSpacing: 0.3 },
+  empty: { alignItems: 'center', marginTop: 80 },
+  emptyEmoji: { fontSize: 52, marginBottom: 14 },
+  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  emptyHint: { color: '#6B7280', fontSize: 13, marginTop: 8 },
 });

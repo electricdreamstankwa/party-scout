@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, Image, ScrollView, StyleSheet, Pressable,
-  Linking, SafeAreaView, ActivityIndicator,
+  Linking, SafeAreaView, ActivityIndicator, Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Event } from '@/lib/types';
-import { GenreTag } from '@/components/GenreTag';
+import { genreColor, genreLabel } from '@/constants/genres';
 
-// Demo events map for offline mode
 const DEMO: Record<string, Partial<Event>> = {
   '1': {
     id: '1', title: 'Full Moon Gathering',
@@ -16,8 +15,7 @@ const DEMO: Record<string, Partial<Event>> = {
     date_start: new Date(Date.now() + 3 * 86400000).toISOString(),
     venue_name: 'The Farm', city: 'Cape Town', country: 'South Africa',
     genres: ['psytrance', 'ambient'], type: 'open_air', flyer_url: null,
-    lineup: ['Astrix', 'Infected Mushroom', 'Vini Vici'],
-    ticket_url: null,
+    lineup: ['Astrix', 'Infected Mushroom', 'Vini Vici'], ticket_url: null,
   },
   '2': {
     id: '2', title: 'Dark Room Techno Night',
@@ -25,8 +23,7 @@ const DEMO: Record<string, Partial<Event>> = {
     date_start: new Date(Date.now() + 5 * 86400000).toISOString(),
     venue_name: 'Blank Projects', city: 'Cape Town', country: 'South Africa',
     genres: ['techno'], type: 'club', flyer_url: null,
-    lineup: ['Dax J', 'Rebekah'],
-    ticket_url: null,
+    lineup: ['Dax J', 'Rebekah'], ticket_url: null,
   },
   '3': {
     id: '3', title: 'Sunrise Festival 2026',
@@ -35,9 +32,12 @@ const DEMO: Record<string, Partial<Event>> = {
     date_end: new Date(Date.now() + 17 * 86400000).toISOString(),
     venue_name: 'Tankwa Karoo', city: 'Calvinia', country: 'South Africa',
     genres: ['psytrance', 'techno', 'festival'], type: 'festival', flyer_url: null,
-    lineup: ['Neelix', 'Ace Ventura', 'Pixel'],
-    ticket_url: null,
+    lineup: ['Neelix', 'Ace Ventura', 'Pixel'], ticket_url: null,
   },
+};
+
+const typeLabel: Record<string, string> = {
+  club: 'CLUB NIGHT', festival: 'FESTIVAL', open_air: 'OPEN AIR', virtual: 'VIRTUAL',
 };
 
 export default function EventDetailScreen() {
@@ -49,10 +49,8 @@ export default function EventDetailScreen() {
     async function load() {
       try {
         const { data } = await supabase.from('events').select('*').eq('id', id).single();
-        if (data) {
-          setEvent(data as Event);
-        } else {
-          // Fall back to demo
+        if (data) { setEvent(data as Event); }
+        else {
           const demo = DEMO[id];
           if (demo) setEvent(demo as Event);
         }
@@ -67,11 +65,7 @@ export default function EventDetailScreen() {
   }, [id]);
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#8B5CF6" size="large" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator color="#A855F7" size="large" /></View>;
   }
 
   if (!event) {
@@ -79,26 +73,18 @@ export default function EventDetailScreen() {
       <View style={styles.center}>
         <Text style={styles.errorText}>Event not found.</Text>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>Go back</Text>
+          <Text style={styles.backBtnText}>← Back to Radar</Text>
         </Pressable>
       </View>
     );
   }
 
+  const accent = event.genres.length > 0 ? genreColor(event.genres[0]) : '#A855F7';
   const dateObj = new Date(event.date_start);
-  const dateLabel = dateObj.toLocaleDateString('en-ZA', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
+  const dateLabel = dateObj.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeLabel = dateObj.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
-
   const endDateObj = event.date_end ? new Date(event.date_end) : null;
-  const endLabel = endDateObj
-    ? endDateObj.toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' })
-    : null;
-
-  const typeLabels: Record<string, string> = {
-    club: 'Club Night', festival: 'Festival', open_air: 'Open Air', virtual: 'Virtual',
-  };
+  const endLabel = endDateObj ? endDateObj.toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' }) : null;
 
   function openMaps() {
     if (event?.lat && event?.lng) {
@@ -115,60 +101,87 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Back button */}
-      <Pressable onPress={() => router.back()} style={styles.back}>
-        <Text style={styles.backArrow}>← Back</Text>
-      </Pressable>
+      {/* Back */}
+      {Platform.OS === 'web' ? (
+        // @ts-ignore
+        <a href="/" onClick={(e: any) => { e.preventDefault(); router.back(); }}
+          style={{ display: 'block', padding: '12px 16px', cursor: 'pointer', textDecoration: 'none' }}>
+          <Text style={styles.backArrow}>← RAVE RADAR</Text>
+        </a>
+      ) : (
+        <Pressable onPress={() => router.back()} style={styles.back}>
+          <Text style={styles.backArrow}>← RAVE RADAR</Text>
+        </Pressable>
+      )}
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Flyer */}
-        {event.flyer_url ? (
-          <Image source={{ uri: event.flyer_url }} style={styles.flyer} resizeMode="cover" />
-        ) : (
-          <View style={styles.flyerPlaceholder}>
-            <Text style={styles.flyerEmoji}>🎉</Text>
+        {/* Hero flyer */}
+        <View style={styles.heroWrap}>
+          {event.flyer_url ? (
+            <Image source={{ uri: event.flyer_url }} style={styles.hero} resizeMode="cover" />
+          ) : (
+            <View style={[styles.hero, styles.heroFallback, { backgroundColor: accent + '22' }]}>
+              <Text style={styles.heroEmoji}>🎉</Text>
+            </View>
+          )}
+          {/* Accent bar at bottom of hero */}
+          <View style={[styles.heroBar, { backgroundColor: accent }]} />
+
+          {/* Type badge over image */}
+          <View style={[styles.typeBadge, { backgroundColor: accent }]}>
+            <Text style={styles.typeBadgeText}>{typeLabel[event.type] ?? 'EVENT'}</Text>
           </View>
-        )}
+        </View>
 
         <View style={styles.body}>
-          {/* Type badge */}
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>{typeLabels[event.type] ?? event.type}</Text>
-          </View>
+          {/* Genre tags */}
+          {event.genres.length > 0 && (
+            <View style={styles.genreRow}>
+              {event.genres.map(g => (
+                <View key={g} style={[styles.genreChip, { borderColor: genreColor(g) + '88', backgroundColor: genreColor(g) + '18' }]}>
+                  <Text style={[styles.genreChipText, { color: genreColor(g) }]}>{genreLabel(g).toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Title */}
           <Text style={styles.title}>{event.title}</Text>
 
           {/* Date */}
-          <View style={styles.infoRow}>
+          <View style={styles.infoCard}>
             <Text style={styles.infoIcon}>📅</Text>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.infoMain}>{dateLabel}</Text>
               <Text style={styles.infoSub}>
-                {timeLabel}{endLabel ? ` — ${endLabel}` : ''}
+                {timeLabel !== '00:00' ? timeLabel : 'Time TBC'}{endLabel ? ` → ${endLabel}` : ''}
               </Text>
             </View>
           </View>
 
           {/* Location */}
           {(event.city || event.venue_name) && (
-            <Pressable style={styles.infoRow} onPress={openMaps}>
+            <Pressable style={styles.infoCard} onPress={openMaps}>
               <Text style={styles.infoIcon}>📍</Text>
-              <View>
+              <View style={{ flex: 1 }}>
                 {event.venue_name && <Text style={styles.infoMain}>{event.venue_name}</Text>}
-                <Text style={[styles.infoSub, { color: '#8B5CF6' }]}>
-                  {[event.city, event.country].filter(Boolean).join(', ')} · Open in Maps
+                <Text style={[styles.infoSub, { color: accent }]}>
+                  {[event.city, event.country].filter(Boolean).join(', ')} · Open Maps →
                 </Text>
               </View>
             </Pressable>
           )}
 
-          {/* Genres */}
-          {event.genres.length > 0 && (
+          {/* Lineup */}
+          {event.lineup && event.lineup.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Genre</Text>
-              <View style={styles.genreRow}>
-                {event.genres.map(g => <GenreTag key={g} genre={g} />)}
+              <Text style={styles.sectionTitle}>LINEUP</Text>
+              <View style={styles.lineupGrid}>
+                {event.lineup.map((artist, i) => (
+                  <View key={i} style={[styles.lineupChip, { borderColor: accent + '44' }]}>
+                    <Text style={styles.lineupChipText}>{artist}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           )}
@@ -176,34 +189,19 @@ export default function EventDetailScreen() {
           {/* Description */}
           {event.description && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About</Text>
+              <Text style={styles.sectionTitle}>ABOUT</Text>
               <Text style={styles.description}>{event.description}</Text>
             </View>
           )}
 
-          {/* Lineup */}
-          {event.lineup && event.lineup.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Lineup</Text>
-              {event.lineup.map((artist, i) => (
-                <View key={i} style={styles.lineupItem}>
-                  <Text style={styles.lineupDot}>▸</Text>
-                  <Text style={styles.lineupArtist}>{artist}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
           {/* Ticket button */}
-          {(event.ticket_url || event.ticket_affiliate_url) && (
-            <Pressable style={styles.ticketBtn} onPress={openTickets}>
-              <Text style={styles.ticketBtnText}>Get Tickets</Text>
+          {(event.ticket_url || event.ticket_affiliate_url) ? (
+            <Pressable style={[styles.ticketBtn, { backgroundColor: accent }]} onPress={openTickets}>
+              <Text style={styles.ticketBtnText}>🎟  GET TICKETS</Text>
             </Pressable>
-          )}
-
-          {!event.ticket_url && !event.ticket_affiliate_url && (
+          ) : (
             <View style={styles.noTickets}>
-              <Text style={styles.noTicketsText}>No ticket link available · Check social media</Text>
+              <Text style={styles.noTicketsText}>No ticket link · Check socials for info</Text>
             </View>
           )}
         </View>
@@ -213,51 +211,62 @@ export default function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0d0d1a' },
-  center: { flex: 1, backgroundColor: '#0d0d1a', alignItems: 'center', justifyContent: 'center' },
+  safe: { flex: 1, backgroundColor: '#080810' },
+  center: { flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' },
   back: { paddingHorizontal: 16, paddingVertical: 12 },
-  backArrow: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
-  scroll: { paddingBottom: 40 },
-  flyer: { width: '100%', height: 260 },
-  flyerPlaceholder: {
-    width: '100%', height: 200,
-    backgroundColor: '#2d2d50',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  flyerEmoji: { fontSize: 72 },
-  body: { padding: 20 },
+  backArrow: { color: '#A855F7', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  scroll: { paddingBottom: 50 },
+  heroWrap: { position: 'relative' },
+  hero: { width: '100%', height: 280 },
+  heroFallback: { alignItems: 'center', justifyContent: 'center' },
+  heroEmoji: { fontSize: 80 },
+  heroBar: { height: 4, width: '100%' },
   typeBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#8B5CF633',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 10,
+    position: 'absolute', top: 14, right: 14,
+    borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
   },
-  typeBadgeText: { color: '#8B5CF6', fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 16, lineHeight: 30 },
-  infoRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14, gap: 12 },
-  infoIcon: { fontSize: 20, marginTop: 2 },
-  infoMain: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  infoSub: { color: '#9CA3AF', fontSize: 13, marginTop: 2 },
-  section: { marginTop: 20 },
-  sectionTitle: { color: '#6B7280', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 10, textTransform: 'uppercase' },
-  genreRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  description: { color: '#D1D5DB', fontSize: 15, lineHeight: 22 },
-  lineupItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 10 },
-  lineupDot: { color: '#8B5CF6', fontSize: 14 },
-  lineupArtist: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  typeBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  body: { padding: 20 },
+  genreRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  genreChip: {
+    borderWidth: 1, borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  genreChipText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
+  title: { color: '#fff', fontSize: 26, fontWeight: '900', letterSpacing: -0.5, marginBottom: 18, lineHeight: 32 },
+  infoCard: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    backgroundColor: '#111122', borderRadius: 12, padding: 14,
+    marginBottom: 10, borderWidth: 1, borderColor: '#ffffff08',
+  },
+  infoIcon: { fontSize: 20 },
+  infoMain: { color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 3 },
+  infoSub: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+  section: { marginTop: 22 },
+  sectionTitle: {
+    color: '#4B5563', fontSize: 10, fontWeight: '800',
+    letterSpacing: 1.5, marginBottom: 12,
+  },
+  lineupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  lineupChip: {
+    borderWidth: 1, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 7,
+    backgroundColor: '#111122',
+  },
+  lineupChipText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  description: { color: '#9CA3AF', fontSize: 14, lineHeight: 22 },
   ticketBtn: {
-    marginTop: 28,
-    backgroundColor: '#8B5CF6',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
+    marginTop: 28, borderRadius: 14,
+    paddingVertical: 16, alignItems: 'center',
+    shadowOpacity: 0.5, shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
   },
-  ticketBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  noTickets: { marginTop: 28, alignItems: 'center' },
-  noTicketsText: { color: '#6B7280', fontSize: 14 },
+  ticketBtnText: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: 1 },
+  noTickets: { marginTop: 28, alignItems: 'center', padding: 16, backgroundColor: '#111122', borderRadius: 12 },
+  noTicketsText: { color: '#4B5563', fontSize: 13 },
   errorText: { color: '#fff', fontSize: 18, marginBottom: 20 },
-  backBtn: { backgroundColor: '#8B5CF6', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  backBtnText: { color: '#fff', fontWeight: '600' },
+  backBtn: {
+    backgroundColor: '#A855F7', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10,
+  },
+  backBtnText: { color: '#fff', fontWeight: '700', letterSpacing: 0.5 },
 });

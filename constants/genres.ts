@@ -7,7 +7,7 @@ export interface Genre {
 
 export const GENRES: Genre[] = [
   { label: 'Psytrance', value: 'psytrance', color: '#8B5CF6', emoji: '🌀' },
-  { label: 'Techno',    value: 'techno',    color: '#374151', emoji: '⚙️' },
+  { label: 'Techno',    value: 'techno',    color: '#06B6D4', emoji: '⚙️' },
   { label: 'House',     value: 'house',     color: '#F59E0B', emoji: '🏠' },
   { label: 'D&B',       value: 'dnb',       color: '#EF4444', emoji: '🥁' },
   { label: 'Jungle',    value: 'jungle',    color: '#10B981', emoji: '🌿' },
