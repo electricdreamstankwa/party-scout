@@ -49,6 +49,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon emoji="🔖" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="submit"
+        options={{
+          title: 'ADD EVENT',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="➕" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }

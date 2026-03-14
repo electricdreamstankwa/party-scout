@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, Image, ScrollView, StyleSheet, Pressable,
-  Linking, SafeAreaView, ActivityIndicator, Platform,
+  Linking, SafeAreaView, ActivityIndicator, Platform, Share,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -94,6 +94,13 @@ export default function EventDetailScreen() {
     }
   }
 
+  function shareEvent() {
+    const dateLabel = new Date(event.date_start).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
+    Share.share({
+      message: `${event.title} · ${dateLabel}${event.city ? ` · ${event.city}` : ''}\n\nFound on Rave Radar ⚡`,
+    });
+  }
+
   function openTickets() {
     const url = event?.ticket_affiliate_url ?? event?.ticket_url;
     if (url) Linking.openURL(url);
@@ -101,7 +108,8 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Back */}
+      {/* Back + Share row */}
+      <View style={styles.topBar}>
       {Platform.OS === 'web' ? (
         // @ts-ignore
         <a href="/" onClick={(e: any) => { e.preventDefault(); router.back(); }}
@@ -113,6 +121,10 @@ export default function EventDetailScreen() {
           <Text style={styles.backArrow}>← RAVE RADAR</Text>
         </Pressable>
       )}
+        <Pressable onPress={shareEvent} style={styles.shareBtn}>
+          <Text style={styles.shareBtnText}>Share ↗</Text>
+        </Pressable>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Hero flyer */}
@@ -213,8 +225,14 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#080810' },
   center: { flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 16 },
   back: { paddingHorizontal: 16, paddingVertical: 12 },
   backArrow: { color: '#A855F7', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  shareBtn: {
+    backgroundColor: '#A855F718', borderWidth: 1, borderColor: '#A855F733',
+    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6,
+  },
+  shareBtnText: { color: '#A855F7', fontSize: 12, fontWeight: '700' },
   scroll: { paddingBottom: 50 },
   heroWrap: { position: 'relative' },
   hero: { width: '100%', height: 280 },
